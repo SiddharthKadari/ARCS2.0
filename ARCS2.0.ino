@@ -80,19 +80,20 @@
 #define D2UP   108 // l - 157
 #define D2U2   109 // m - 163
 
+#define START_DELAY_MICROS    460
+
 #define TEST_DELAY 200
 #define EXECUTION_DELAY 40
 
 const uint8_t DATA_OFFSET = 65;
 
 void setup() {
-  Serial.begin(38400);//115200
-  // Serial.setTimeout(1);
+  Serial.begin(115200);
   for(uint8_t i = 22; i < 40; i++)
     pinMode(i, OUTPUT);
 
   for(uint8_t i = 24; i < 40; i+=3)
-    digitalWrite(i, HIGH);
+    digitalWrite(i, LOW);
 
 }
 
@@ -101,7 +102,7 @@ void loop() {
 }
 
 void quarter(uint8_t q){
-  uint16_t delayMicros = 500;
+  uint16_t delayMicros = START_DELAY_MICROS;
 
   delay(EXECUTION_DELAY);
   
@@ -116,14 +117,14 @@ void quarter(uint8_t q){
       delayMicros -= 8;
     else if(i < 35)
       delayMicros -= 1;
-    else if(i > 35)
-      delayMicros += 25;
+    else if(i > 40)
+      delayMicros += 15;
   }
 
 }
 
 void half(uint8_t h){
-  uint16_t delayMicros = 500;
+  uint16_t delayMicros = START_DELAY_MICROS;
 
   delay(EXECUTION_DELAY);
   
@@ -139,13 +140,13 @@ void half(uint8_t h){
       delayMicros -= 8;
     else if(i < 35)
       delayMicros -= 1;
-    else if(i > 85)
-      delayMicros += 25;
+    else if(i > 90)
+      delayMicros += 15;
   }
 }
 
 void halfHalf(uint8_t h1, uint8_t h2){
-  uint16_t delayMicros = 500;
+  uint16_t delayMicros = START_DELAY_MICROS;
 
   delay(EXECUTION_DELAY);
   
@@ -163,13 +164,13 @@ void halfHalf(uint8_t h1, uint8_t h2){
       delayMicros -= 8;
     else if(i < 35)
       delayMicros -= 1;
-    else if(i > 85)
-      delayMicros += 25;
+    else if(i > 90)
+      delayMicros += 15;
   }
 }
 
 void quarterQuarter(uint8_t q1, uint8_t q2){
-  uint16_t delayMicros = 500;
+  uint16_t delayMicros = START_DELAY_MICROS;
 
   delay(EXECUTION_DELAY);
   
@@ -187,15 +188,12 @@ void quarterQuarter(uint8_t q1, uint8_t q2){
       delayMicros -= 8;
     else if(i < 35)
       delayMicros -= 1;
-    else if(i > 35)
-      delayMicros += 25;
+    else if(i > 40)
+      delayMicros += 15;
   }
 }
 
 void runSolve(uint8_t numBytes, uint8_t bytes[]){
-  for(uint8_t i = 24; i < 40; i+=3)
-    digitalWrite(i, LOW);
-
   uint8_t cmd, stepPin1, stepPin2, dualMovePermutation;
 
   for(uint8_t i = 0; i < numBytes; i++){
@@ -264,11 +262,6 @@ void runSolve(uint8_t numBytes, uint8_t bytes[]){
     }
     
   }
-
-  delay(EXECUTION_DELAY);
-
-  for(uint8_t i = 24; i < 40; i+=3)
-    digitalWrite(i, HIGH);
 }
 
 bool on = false;

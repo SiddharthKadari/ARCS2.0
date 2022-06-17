@@ -1,4 +1,38 @@
-var start, a;
+var startTime, captureCompletionTime, calculationTime;
+
+const SerialStatus = {
+	PORT_OPEN: 'Serial Connected',
+	PORT_CLOSED: 'Serial Disconnected'
+}
+
+const Min2PhaseStatus = {
+	IDLE: 'Uninitialized',
+	INITIALIZING: 'Initializing',
+	INITIALIZED: 'Initialized'
+}
+
+const OperationStatus = {
+	IDLE: 'IDLE',
+	SOLVING: 'Solving'
+}
+
+var SystemStatus = {
+	serial: SerialStatus.PORT_CLOSED,
+	min2Phase: Min2PhaseStatus.IDLE,
+	operation: OperationStatus.IDLE
+}
+
+function updateStatusIndicator(){
+	let statusStr = '';
+	if(SystemStatus.operation == OperationStatus.SOLVING){
+		statusStr = SystemStatus.operation;
+	}else{
+		statusStr += SystemStatus.min2Phase + ', ' + SystemStatus.serial;
+	}
+	document.getElementById("statusIndicator").innerHTML = statusStr;
+}
+
+updateStatusIndicator();
 
 function u(){
 	sendMessage("u");
@@ -418,8 +452,14 @@ async function beginListen() {
 async function connect() {
 	port = await navigator.serial.requestPort();
 
+	port.addEventListener('disconnect', event => {
+		SystemStatus.serial = SerialStatus.PORT_CLOSED;
+		console.log(1);
+		updateStatusIndicator();
+	});
+
 	await port.open({
-		baudRate: 38400,//115200
+		baudRate: 115200,
 		dataBits: 8,
 		parity: 'none',
 		stopBits: 1,
@@ -434,22 +474,28 @@ async function connect() {
 	const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
 	writer = textEncoder.writable.getWriter();
 
-	navigator.serial.addEventListener("disconnect", (event) => {
-		console.log("Device has been unplugged");
-	});
-
 	beginListen();
 
 	await sleep(2000);
 
 	console.log("Serial initialized");
+
+	SystemStatus.serial = SerialStatus.PORT_OPEN;
+	updateStatusIndicator();
 }
 
 
 //when message received from arduino
 async function handleMessage(msg) {
-	console.log((performance.now()-a)/1000.0);
+	let t = performance.now();
+	console.log("Capture Time: " + ((captureCompletionTime-startTime)/1000.0));
+	console.log("Calculation Time: " + ((calculationTime-captureCompletionTime)/1000.0));
+	console.log("Execution Time: " + ((t-calculationTime)/1000.0));
+	console.log("Total Time: " + ((t-startTime)/1000.0));
 	console.log(msg);
+
+	SystemStatus.operation = OperationStatus.IDLE;
+	updateStatusIndicator();
 }
 
 //send string to arduino
@@ -1915,18 +1961,46 @@ var min2phase = (
 	})();
 
 const INIT_EPOCHS = 10000;
+const INIT_PARTITIONS = 100;
 
 async function initSolve() {
+	if(SystemStatus.min2Phase != Min2PhaseStatus.IDLE){
+		return;
+	}
 
 	min2phase.initFull();
 
-	for (let i = 0; i <= INIT_EPOCHS; i++) {
+	SystemStatus.min2Phase = Min2PhaseStatus.INITIALIZING;
+	updateStatusIndicator();
+
+	initSolveCallback(0, INIT_PARTITIONS);
+
+}
+
+function initSolveCallback(i, total){
+	for(let j = 0; j < INIT_EPOCHS / total; j++){
 		min2phase.solve(min2phase.randomCube());
-		if (i % (INIT_EPOCHS / 100) == 0 && i != 0){
-			console.log(i / (INIT_EPOCHS / 100) + "%");
-			sleep(100);
-		}
 	}
+	
+	incrementProgressBar(0, 100, 1);
+
+	if(++i < total){
+		setTimeout(() => {
+			initSolveCallback(i, total);
+		}, 100);
+	}else{
+		SystemStatus.min2Phase = Min2PhaseStatus.INITIALIZED;
+		updateStatusIndicator();
+	}
+}
+function incrementProgressBar(i, time, quantity){
+	setTimeout(() => {
+		let w = document.getElementById('initProgressBar').style.width;
+		document.getElementById('initProgressBar').style.width = (parseFloat(w.substring(0, w.indexOf('%'))) + (quantity / time)) + '%';
+		if(++i < time){
+			incrementProgressBar(i, time, quantity);
+		}
+	}, 1);
 }
 
 function simplifyAlg(alg) {
@@ -2115,12 +2189,24 @@ function countQuarters(alg) {
 }
 
 function kaboom(){
-	a = performance.now();
+	if(SystemStatus.min2Phase != Min2PhaseStatus.INITIALIZED || SystemStatus.serial != SerialStatus.PORT_OPEN){
+		return;
+	}
+
+	SystemStatus.operation = OperationStatus.SOLVING;
+	updateStatusIndicator();
+	startTime = performance.now();
 	capture();
+	captureCompletionTime = performance.now();
 	let solution = simplifyAlg(min2phase.solve(scanCube(scanTargets())));
+	calculationTime = performance.now();
 	console.log(solution);
 	console.log(scanToImg(scanCube(scanTargets())));
 	console.log(scanTargets());
-	if(solution.substring(0,5) != 'Error')
+	if(solution.substring(0,5) != 'Error'){
 		sendMessage(solution);
+	}else{
+		SystemStatus.operation = OperationStatus.IDLE;
+		updateStatusIndicator();
+	}
 }

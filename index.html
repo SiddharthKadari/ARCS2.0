@@ -1,4 +1,52 @@
 <html lang="en">
+  <style>
+    body {
+      background-color: darkgray;
+    }
+
+    button{
+      background-color: darkblue; /* Green */
+      border: 5px solid black;
+      border-radius: 50px;
+      margin-inline: 10px;
+      color: white;
+      padding: 15px 32px;
+      text-align: center;
+      text-decoration: none;
+      font-size: 20px;
+      font: sans-serif;
+    }
+
+    .progressBar{
+      box-sizing: content-box;
+      position: relative;
+      background: #555;
+      border-radius: 25px;
+      height: 30px;
+      padding: 10px;
+      border: 5px solid black;
+      margin-inline: 10px;
+    }
+
+    .progressBar > span {
+      display: block;
+      border-radius: 20px;
+      height: 30px;
+      background-color: green;
+      box-shadow: inset 0 2px 9px rgba(255, 255, 255, 0.3),
+        inset 0 -2px 6px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .statusIndicator{
+      font-family: sans-serif;
+      font-size: 50px;
+      font-weight: bold;
+      color: blue;
+    }
+  </style>
+
   <body>
     <div id="vidsDiv">
       <video autoplay id="vid0"></video>
@@ -12,11 +60,21 @@
     </div>
 
     <canvas id="imgsCanvas" style="overflow:auto"></canvas>
+    
+    <br></br>
 
     <button id="initBtn" onclick="initCams();initSolve();">Init System</button>
     <button id="captureBtn" onclick="time(capture)">Capture</button>
     <button id="connectBtn" onclick="connect();">Connect</button>
     <button id="solveBtn" onclick="kaboom();">Solve</button>
+    
+    <br></br>
+
+    <div class="progressBar" style="width: 630px">
+      <span id="initProgressBar" style="width: 0%"></span>
+    </div>
+
+    <p class="StatusIndicator">System Status: <span id="statusIndicator">LOADING</span></p>
   </body>
 
   <script src="index.js"></script>
