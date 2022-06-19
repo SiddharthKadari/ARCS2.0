@@ -344,7 +344,6 @@ function getWebcams() {
 
 async function initCams() {
 	cams = await getWebcams();
-	console.log(cams);
 
 	imgsDomElem = document.getElementById('imgsCanvas');
 

@@ -80,7 +80,7 @@
 #define D2UP   108 // l - 157
 #define D2U2   109 // m - 163
 
-#define START_DELAY_MICROS    460
+#define START_DELAY_MICROS    420
 
 #define TEST_DELAY 200
 #define EXECUTION_DELAY 40
@@ -92,7 +92,7 @@ void setup() {
   for(uint8_t i = 22; i < 40; i++)
     pinMode(i, OUTPUT);
 
-  for(uint8_t i = 24; i < 40; i+=3)
+  for(uint8_t i = 24; i < 40; i++)
     digitalWrite(i, LOW);
 
 }
@@ -107,18 +107,19 @@ void quarter(uint8_t q){
   delay(EXECUTION_DELAY);
   
   for(int i = 0; i < 50; i++){
-    digitalWrite(q, LOW);
-    delayMicroseconds(delayMicros);
     digitalWrite(q, HIGH);
     delayMicroseconds(delayMicros);
+    digitalWrite(q, LOW);
+    delayMicroseconds(delayMicros);
+    
     if(i < 7)
       delayMicros -= 20;
     else if(i < 10)
       delayMicros -= 8;
     else if(i < 35)
       delayMicros -= 1;
-    else if(i > 40)
-      delayMicros += 15;
+    else if(i > 35)
+      delayMicros += 20;
   }
 
 }
@@ -151,11 +152,11 @@ void halfHalf(uint8_t h1, uint8_t h2){
   delay(EXECUTION_DELAY);
   
   for(int i = 0; i < 100; i++){
-    digitalWrite(h1, LOW);
-    digitalWrite(h2, LOW);
-    delayMicroseconds(delayMicros);
     digitalWrite(h1, HIGH);
     digitalWrite(h2, HIGH);
+    delayMicroseconds(delayMicros);
+    digitalWrite(h1, LOW);
+    digitalWrite(h2, LOW);
     delayMicroseconds(delayMicros);
 
     if(i < 7)
@@ -175,11 +176,11 @@ void quarterQuarter(uint8_t q1, uint8_t q2){
   delay(EXECUTION_DELAY);
   
   for(int i = 0; i < 50; i++){
-    digitalWrite(q1, LOW);
-    digitalWrite(q2, LOW);
-    delayMicroseconds(delayMicros);
     digitalWrite(q1, HIGH);
     digitalWrite(q2, HIGH);
+    delayMicroseconds(delayMicros);
+    digitalWrite(q1, LOW);
+    digitalWrite(q2, LOW);
     delayMicroseconds(delayMicros);
 
     if(i < 7)
