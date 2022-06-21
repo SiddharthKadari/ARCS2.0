@@ -118,8 +118,8 @@ void quarter(uint8_t q){
       delayMicros -= 8;
     else if(i < 35)
       delayMicros -= 1;
-    else if(i > 35)
-      delayMicros += 20;
+    else if(i > 40)
+      delayMicros += 15;
   }
 
 }
