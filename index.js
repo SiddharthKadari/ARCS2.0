@@ -1,4 +1,4 @@
-var startTime, captureCompletionTime, calculationTime;
+var captureStartTime, calculationStartTime, executionStartTime;
 
 const SerialStatus = {
 	PORT_OPEN: 'Serial Connected',
@@ -34,24 +34,8 @@ function updateStatusIndicator(){
 
 updateStatusIndicator();
 
-function u(){
-	sendMessage("u");
-}
-function d(){
-	sendMessage("d");
-}
-function r(){
-	sendMessage("r");
-}
-function l(){
-	sendMessage("l");
-}
-function f(){
-	sendMessage("f");
-}
-function b(){
-	sendMessage("b");
-}
+const centers = ["U", "R", "F", "D", "L", "B"];
+
 //######################### CAMERA + SCANNING #########################
 
 var camDomElems = [];
@@ -166,7 +150,7 @@ function colorToFace(i, color){
 	}else{//TESTING: B
 		if(color[0] < 150 && color[1] < 150 && color[2] < 150){
 			return 'B';
-		}else if(color[0] < 70 && color[2] > 200){
+		}else if(color[0] < 70 && (color[2] > 200 || i == 40 && color[2] > 175)){
 			return 'R';
 		}else if(color[2] > 210 && color[0] + color[1] + color[2] > 620){
 			return 'U';
@@ -179,9 +163,8 @@ function colorToFace(i, color){
 		}
 	}
 }
+
 //parameter should be the result of scanTargets()
-let centers = ["U", "R", "F", "D", "L", "B"];
-// let centers = ["W", "B", "R", "Y", "G", "O"];
 function scanCube(colors){
 	let cube = "", i = 0;
 
@@ -242,7 +225,7 @@ var targets = [
 	[2270, 180], //D9 targets[31]
 
 
-	[2700, 27],  //L1 targets[32]
+	[2700, 24],  //L1 targets[32]
 	[2760, 30],  //L2 targets[33]
 	[1555, 27],  //L3 targets[34]
 	[2700, 100], //L4 targets[35]
@@ -388,11 +371,11 @@ function swap(s1, s2) {
 }
 
 async function time(f, a, b) {
-	let startTime = performance.now();
+	let captureStartTime = performance.now();
 
 	let r = await f(a, b);
 
-	console.log("Time: " + (performance.now() - startTime));
+	console.log("Time: " + (performance.now() - captureStartTime));
 
 	return r;
 }
@@ -453,7 +436,6 @@ async function connect() {
 
 	port.addEventListener('disconnect', event => {
 		SystemStatus.serial = SerialStatus.PORT_CLOSED;
-		console.log(1);
 		updateStatusIndicator();
 	});
 
@@ -487,10 +469,10 @@ async function connect() {
 //when message received from arduino
 async function handleMessage(msg) {
 	let t = performance.now();
-	console.log("Capture Time: " + ((captureCompletionTime-startTime)/1000.0));
-	console.log("Calculation Time: " + ((calculationTime-captureCompletionTime)/1000.0));
-	console.log("Execution Time: " + ((t-calculationTime)/1000.0));
-	console.log("Total Time: " + ((t-startTime)/1000.0));
+	console.log("Capture Time: " + ((calculationStartTime-captureStartTime)/1000.0));
+	console.log("Calculation Time: " + ((executionStartTime-calculationStartTime)/1000.0));
+	console.log("Execution Time: " + ((t-executionStartTime)/1000.0));
+	console.log("Total Time: " + ((t-captureStartTime)/1000.0));
 	console.log(msg);
 
 	SystemStatus.operation = OperationStatus.IDLE;
@@ -499,6 +481,7 @@ async function handleMessage(msg) {
 
 //send string to arduino
 async function sendMessage(msg) {
+	executionStartTime = performance.now();
 	await writer.write(String.fromCharCode(msg.length) + msg);
 }
 
@@ -2194,18 +2177,26 @@ function kaboom(){
 
 	SystemStatus.operation = OperationStatus.SOLVING;
 	updateStatusIndicator();
-	startTime = performance.now();
+	captureStartTime = performance.now();
 	capture();
-	captureCompletionTime = performance.now();
+	calculationStartTime = performance.now();
 	let solution = simplifyAlg(min2phase.solve(scanCube(scanTargets())));
-	calculationTime = performance.now();
-	console.log(solution);
-	console.log(scanToImg(scanCube(scanTargets())));
-	console.log(scanTargets());
 	if(solution.substring(0,5) != 'Error'){
 		sendMessage(solution);
 	}else{
 		SystemStatus.operation = OperationStatus.IDLE;
 		updateStatusIndicator();
+
+		let tileCounts = [];
+
+		for(let i = 0; i < centers.length; i++) {
+			if(scanCube(scanTargets()).match(new RegExp(centers[i], "g")).length != 9) {
+				console.log(centers[i] + ': ' + scanCube(scanTargets()).match(new RegExp(centers[i], "g")).length);
+			}
+		}
 	}
+	
+	console.log(solution);
+	console.log(scanToImg(scanCube(scanTargets())));
+	console.log(scanTargets());
 }

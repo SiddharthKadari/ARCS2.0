@@ -80,7 +80,7 @@
 #define D2UP   108 // l - 157
 #define D2U2   109 // m - 163
 
-#define START_DELAY_MICROS    420
+#define START_DELAY_MICROS    400
 
 #define TEST_DELAY 200
 #define EXECUTION_DELAY 40
@@ -117,9 +117,9 @@ void quarter(uint8_t q){
     else if(i < 10)
       delayMicros -= 8;
     else if(i < 35)
-      delayMicros -= 1;
-    else if(i > 40)
-      delayMicros += 15;
+      delayMicros -= 2;
+    else if(i > 37)
+      delayMicros += 20;
   }
 
 }
@@ -140,9 +140,9 @@ void half(uint8_t h){
     else if(i < 10)
       delayMicros -= 8;
     else if(i < 35)
-      delayMicros -= 1;
-    else if(i > 90)
-      delayMicros += 15;
+      delayMicros -= 2;
+    else if(i > 87)
+      delayMicros += 20;
   }
 }
 
@@ -164,9 +164,9 @@ void halfHalf(uint8_t h1, uint8_t h2){
     else if(i < 10)
       delayMicros -= 8;
     else if(i < 35)
-      delayMicros -= 1;
-    else if(i > 90)
-      delayMicros += 15;
+      delayMicros -= 2;
+    else if(i > 87)
+      delayMicros += 20;
   }
 }
 
@@ -188,9 +188,9 @@ void quarterQuarter(uint8_t q1, uint8_t q2){
     else if(i < 10)
       delayMicros -= 8;
     else if(i < 35)
-      delayMicros -= 1;
-    else if(i > 40)
-      delayMicros += 15;
+      delayMicros -= 2;
+    else if(i > 37)
+      delayMicros += 20;
   }
 }
 
