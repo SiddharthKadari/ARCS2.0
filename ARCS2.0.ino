@@ -115,11 +115,11 @@ void quarter(uint8_t q){
     if(i < 7)
       delayMicros -= 20;
     else if(i < 10)
-      delayMicros -= 8;
+      delayMicros -= 10;
     else if(i < 35)
       delayMicros -= 2;
     else if(i > 37)
-      delayMicros += 20;
+      delayMicros += 25;
   }
 
 }
@@ -138,11 +138,11 @@ void half(uint8_t h){
     if(i < 7)
       delayMicros -= 20;
     else if(i < 10)
-      delayMicros -= 8;
+      delayMicros -= 10;
     else if(i < 35)
       delayMicros -= 2;
     else if(i > 87)
-      delayMicros += 20;
+      delayMicros += 25;
   }
 }
 
@@ -162,11 +162,11 @@ void halfHalf(uint8_t h1, uint8_t h2){
     if(i < 7)
       delayMicros -= 20;
     else if(i < 10)
-      delayMicros -= 8;
+      delayMicros -= 10;
     else if(i < 35)
       delayMicros -= 2;
     else if(i > 87)
-      delayMicros += 20;
+      delayMicros += 25;
   }
 }
 
@@ -186,11 +186,11 @@ void quarterQuarter(uint8_t q1, uint8_t q2){
     if(i < 7)
       delayMicros -= 20;
     else if(i < 10)
-      delayMicros -= 8;
+      delayMicros -= 10;
     else if(i < 35)
       delayMicros -= 2;
     else if(i > 37)
-      delayMicros += 20;
+      delayMicros += 25;
   }
 }
 
