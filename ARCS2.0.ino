@@ -5,6 +5,7 @@
 #define DOWN   4
 #define UPp    5
 
+//Assign Colors to Face
 #define RED     FRONT
 #define ORANGE  BACK
 #define BLUE    RIGHT
@@ -12,6 +13,7 @@
 #define YELLOW  DOWN
 #define WHITE   UPp
 
+//Assign Arduino Pins to Stepper Pins
 #define F_STEP 22 //value - 22 = 0
 #define F_DIR  23
 #define F_ENA  24
@@ -31,6 +33,24 @@
 #define U_DIR  38
 #define U_ENA  39
 
+/* SINGLE MOVE INDEXING KEY:
+The following definitions are a key that maps a recieved command Byte to an executable move
+In the function runSolve(uint8_t numBytes, uint8_t bytes[]), the function must successfully decode a solve string to translate characters indo useful command data as follows:
+
+#define [Move] [discrete_index] // [ASCII Character equal to discrete_index] - [discrete_index - 64]
+
+[discrete_index - 64] is useful when mapping a command byte to the respective pinouts on the arduino
+
+For Example:
+For the move Front-Prime:
+
+#define FP     71  // G - 7
+
+[Move] = FP
+discrete_index = 71
+ASCII Character = G
+discrete_index - 64 = 7
+*/
 #define F      65  // A - 1
 #define B      66  // B - 2
 #define R      67  // C - 3
@@ -50,43 +70,55 @@
 #define D2     81  // Q - 17
 #define U2     82  // R - 18
 
-//Key for dual moves, the discrete index (the number in the comment) is the sum of the discrete indecies of the 2 moves involved
+/* DUAL MOVE INDEXING KEY:
+The following definitions are a key that maps a recieved command Byte to an executable move
+In the function runSolve(uint8_t numBytes, uint8_t bytes[]), the function must successfully decode a solve string to translate characters indo useful command data as follows:
 
-#define FB     83  // S - 131
-#define FBP    84  // T - 137
-#define FB2    85  // U - 143
-#define FPB    86  // V - 137
-#define FPBP   87  // W - 143
-#define FPB2   88  // X - 149
-#define F2B    89  // Y - 143
-#define F2BP   90  // Z - 149
-#define F2B2   91  // [ - 155
-#define RL     92  //\\ - 135
-#define RLP    93  // ] - 141
-#define RL2    94  // ^ - 147
-#define RPL    95  // _ - 141
-#define RPLP   96  // ` - 147
-#define RPL2   97  // a - 153
-#define R2L    98  // b - 147
-#define R2LP   99  // c - 153
-#define R2L2   100 // d - 159
-#define DU     101 // e - 139
-#define DUP    102 // f - 145
-#define DU2    103 // g - 151
-#define DPU    104 // h - 145
-#define DPUP   105 // i - 151
-#define DPU2   106 // j - 157
-#define D2U    107 // k - 151
-#define D2UP   108 // l - 157
-#define D2U2   109 // m - 163
+#define [Move] [discrete_index] // [ASCII Character equal to discrete_index]
+
+For Example:
+For the move Front-Prime_Back-Two:
+
+#define FPB2   88  // X
+
+[Move] = FPB2
+discrete_index = 88
+ASCII Character = X
+*/
+#define FB     83  // S
+#define FBP    84  // T
+#define FB2    85  // U
+#define FPB    86  // V
+#define FPBP   87  // W
+#define FPB2   88  // X
+#define F2B    89  // Y
+#define F2BP   90  // Z
+#define F2B2   91  // [
+#define RL     92  // \\ 
+#define RLP    93  // ]
+#define RL2    94  // ^
+#define RPL    95  // _
+#define RPLP   96  // `
+#define RPL2   97  // a
+#define R2L    98  // b
+#define R2LP   99  // c
+#define R2L2   100 // d
+#define DU     101 // e
+#define DUP    102 // f
+#define DU2    103 // g
+#define DPU    104 // h
+#define DPUP   105 // i
+#define DPU2   106 // j
+#define D2U    107 // k
+#define D2UP   108 // l
+#define D2U2   109 // m
 
 #define START_DELAY_MICROS    400
 
 #define TEST_DELAY 200
 #define EXECUTION_DELAY 40
 
-const uint8_t DATA_OFFSET = 65;
-
+//initialize microcontroller
 void setup() {
   Serial.begin(115200);
   for(uint8_t i = 22; i < 40; i++)
@@ -101,6 +133,7 @@ void loop() {
   
 }
 
+//to rotate the stepper motor mapped to STEP_PIN q a quarter turn in the current direction
 void quarter(uint8_t q){
   uint16_t delayMicros = START_DELAY_MICROS;
 
@@ -124,6 +157,7 @@ void quarter(uint8_t q){
 
 }
 
+//to rotate the stepper motor mapped to STEP_PIN h a half turn in the current direction
 void half(uint8_t h){
   uint16_t delayMicros = START_DELAY_MICROS;
 
@@ -146,6 +180,7 @@ void half(uint8_t h){
   }
 }
 
+//to rotate the stepper motors mapped to STEP_PINs h1 and h2 a half turn in their respective current directions
 void halfHalf(uint8_t h1, uint8_t h2){
   uint16_t delayMicros = START_DELAY_MICROS;
 
@@ -170,6 +205,7 @@ void halfHalf(uint8_t h1, uint8_t h2){
   }
 }
 
+//to rotate the stepper motors mapped to STEP_PINs q1 and q2 a quarter turn in their respective current directions
 void quarterQuarter(uint8_t q1, uint8_t q2){
   uint16_t delayMicros = START_DELAY_MICROS;
 
@@ -194,6 +230,7 @@ void quarterQuarter(uint8_t q1, uint8_t q2){
   }
 }
 
+//Efficiently decode and execute the solve/scramble string with minimal conditions and loops
 void runSolve(uint8_t numBytes, uint8_t bytes[]){
   uint8_t cmd, stepPin1, stepPin2, dualMovePermutation;
 
@@ -261,186 +298,26 @@ void runSolve(uint8_t numBytes, uint8_t bytes[]){
         }
       }
     }
-    
   }
 }
 
-bool on = false;
-
 void serialEvent(){
-
+  //First message contains package length
   uint8_t numBytes = Serial.read();
 
   uint8_t bytes[numBytes];
 
   Serial.readBytes(bytes, numBytes);
 
-  if(numBytes != 0 && numBytes < 25){
+  if(numBytes != 0 && numBytes < 25){ //If the serial recieves a solve or scramble string
     runSolve(numBytes, bytes);
 
     Serial.println('0');
-  }else if(numBytes == 25){
+  }else if(numBytes == 25){ //Any string that does not qualify as a solve or scramble string will enable the stepper drivers for 5 seconds
     for(uint8_t i = 24; i < 40; i+=3)
       digitalWrite(i, LOW);
     delay(5000);
     for(uint8_t i = 24; i < 40; i+=3)
       digitalWrite(i, HIGH);
   }
-
-
-
-/*
- * TEST MODE
- */
-  // String str1 = Serial.readString();
-  // String s = str1.substring(0, 1);
-  // String str = str1.substring(1,2);
-  // long start = micros();
-  // if(str == "R"){
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, LOW);
-  //   digitalWrite(R_ENA, LOW);
-  //   delay(TEST_DELAY);
-  //   half(R_STEP);
-  //   delay(TEST_DELAY);
-  //   digitalWrite(R_ENA, HIGH);
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, HIGH);
-  // }else if(str == "F"){
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, LOW);
-  //   digitalWrite(F_ENA, LOW);
-  //   delay(TEST_DELAY);
-  //   half(F_STEP);
-  //   delay(TEST_DELAY);
-  //   digitalWrite(F_ENA, HIGH);
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, HIGH);
-  // }else if(str == "L"){
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, LOW);
-  //   digitalWrite(L_ENA, LOW);
-  //   delay(TEST_DELAY);
-  //   half(L_STEP);
-  //   delay(TEST_DELAY);
-  //   digitalWrite(L_ENA, HIGH);
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, HIGH);
-  // }else if(str == "D"){
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, LOW);
-  //   digitalWrite(D_ENA, LOW);
-  //   delay(TEST_DELAY);
-  //   half(D_STEP);
-  //   delay(TEST_DELAY);
-  //   digitalWrite(D_ENA, HIGH);
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, HIGH);
-  // }else if(str == "B"){
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, LOW);
-  //   digitalWrite(B_ENA, LOW);
-  //   delay(TEST_DELAY);
-  //   half(B_STEP);
-  //   delay(TEST_DELAY);
-  //   digitalWrite(B_ENA, HIGH);
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, HIGH);
-  // }else if(str == "U"){
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, LOW);
-  //   digitalWrite(U_ENA, LOW);
-  //   delay(TEST_DELAY);
-  //   half(U_STEP);
-  //   delay(TEST_DELAY);
-  //   digitalWrite(U_ENA, HIGH);
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, HIGH);
-  // }else if(str == "r"){
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, LOW);
-  //   digitalWrite(R_ENA, LOW);
-  //   delay(TEST_DELAY);
-  //   quarter(R_STEP);
-  //   delay(TEST_DELAY);
-  //   digitalWrite(R_ENA, HIGH);
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, HIGH);
-  // }else if(str == "f"){
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, LOW);
-  //   digitalWrite(F_ENA, LOW);
-  //   delay(TEST_DELAY);
-  //   quarter(F_STEP);
-  //   delay(TEST_DELAY);
-  //   digitalWrite(F_ENA, HIGH);
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, HIGH);
-  // }else if(str == "l"){
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, LOW);
-  //   digitalWrite(L_ENA, LOW);
-  //   delay(TEST_DELAY);
-  //   quarter(L_STEP);
-  //   delay(TEST_DELAY);
-  //   digitalWrite(L_ENA, HIGH);
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, HIGH);
-  // }else if(str == "d"){
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, LOW);
-  //   digitalWrite(D_ENA, LOW);
-  //   delay(TEST_DELAY);
-  //   quarter(D_STEP);
-  //   delay(TEST_DELAY);
-  //   digitalWrite(D_ENA, HIGH);
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, HIGH);
-  // }else if(str == "b"){
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, LOW);
-  //   digitalWrite(B_ENA, LOW);
-  //   delay(TEST_DELAY);
-  //   quarter(B_STEP);
-  //   delay(TEST_DELAY);
-  //   digitalWrite(B_ENA, HIGH);
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, HIGH);
-  // }else if(str == "u"){
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, LOW);
-  //   digitalWrite(U_ENA, LOW);
-  //   delay(TEST_DELAY);
-  //   quarter(U_STEP);
-  //   delay(TEST_DELAY);
-  //   digitalWrite(U_ENA, HIGH);
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, HIGH);
-  // }else if(str == "t"){
-    
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //       digitalWrite(i, LOW);
-
-  //   digitalWrite(F_ENA, LOW);
-  //   delay(TEST_DELAY);
-  //   quarter(F_STEP);
-  //   delay(50);
-  //   half(R_STEP);
-  //   delay(TEST_DELAY);
-  //   Serial.println("a");
-    
-  // for(uint8_t i = 24; i < 40; i+=3)
-  //   digitalWrite(i, HIGH);
-  // }else if(str == "o"){
-    
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //       digitalWrite(i, LOW);
-
-  //   delay(2000);
-    
-  //   for(uint8_t i = 24; i < 40; i+=3)
-  //     digitalWrite(i, HIGH);
-  // }
-  // if(s == " ")Serial.println((micros() - start)/1000.0-2*TEST_DELAY);
-  
 }

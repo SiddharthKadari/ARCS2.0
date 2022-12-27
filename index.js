@@ -1,5 +1,7 @@
 var captureStartTime, calculationStartTime, executionStartTime;
 
+//Define page states
+
 const SerialStatus = {
 	PORT_OPEN: 'Serial Connected',
 	PORT_CLOSED: 'Serial Disconnected'
@@ -55,7 +57,7 @@ const HEIGHT = 200;
 const NUM_CAMS = 8;
 var cams;
 
-//camera types
+//camera types - no longer needed
 const AVERMEDIA_CAM = {
 	width: 1920,
 	height: 1080
@@ -64,10 +66,6 @@ const FACETIME_CAM = {
 	width: 1280,
 	height: 720
 };
-
-function getPixel(x, y) {
-	return [imgPixels[4 * (y * imgsDomElem.width + x)], imgPixels[4 * (y * imgsDomElem.width + x) + 1], imgPixels[4 * (y * imgsDomElem.width + x) + 2]];
-}
 
 function getTypeFromLabel(label) {
 	if (label.includes("Live Streamer CAM 313"))
@@ -80,16 +78,12 @@ function getTypeFromLabel(label) {
 		}
 }
 
-function scanTargets() {
-	let results = [];
-
-	for (let i in targets) {
-		results.push(getPixel(targets[i][0], targets[i][1]));
-	}
-
-	return results;
+//Return RGB data of the pixel selected
+function getPixel(x, y) {
+	return [imgPixels[4 * (y * imgsDomElem.width + x)], imgPixels[4 * (y * imgsDomElem.width + x) + 1], imgPixels[4 * (y * imgsDomElem.width + x) + 2]];
 }
 
+//classify RGB data to a face of the Rubik's Cube based on the tile being scanned
 function colorToFace(i, color){
 	if(i < 8){//U Ttested
 		if(color[0] < 150 && color[1] < 150 && color[2] < 150){
@@ -246,7 +240,19 @@ var targets = [
 	[2560, 160], //B8 targets[46]
 	[2620, 170], //B9 targets[47]
 ];
-/** prepare scrambledCube as
+
+//create an input array for Min2Phase based on the captured images
+function scanTargets() {
+	let results = [];
+
+	for (let i in targets) {
+		results.push(getPixel(targets[i][0], targets[i][1]));
+	}
+
+	return results;
+}
+
+/** prepare scrambled Cube data as
  *
  *             |************|
  *             |*U1**U2**U3*|
@@ -308,6 +314,7 @@ async function subCapture(img) {
 	finishedCaptures++;
 }
 
+//display the selected target pixels for image parsing
 function showTargets() {
 	let ctx = imgsDomElem.getContext('2d');
 	ctx.fillStyle = "#000000";
@@ -316,6 +323,7 @@ function showTargets() {
 		ctx.fillRect(targets[i][0] - 5, targets[i][1] - 5, 10, 10);
 }
 
+//Get full webcam device list
 function getWebcams() {
 	return navigator.mediaDevices.enumerateDevices()
 		.then((devices) => {
@@ -325,6 +333,7 @@ function getWebcams() {
 		});
 }
 
+//initialize all cameras
 async function initCams() {
 	cams = await getWebcams();
 
@@ -343,6 +352,7 @@ async function initCams() {
 	imgsDomElem.getContext('2d').getImageData(0,0,1,1);
 }
 
+//display all camera data to webpage
 async function camInit(i) {
 	camDomElems.push(document.getElementById('vid' + i));
 
@@ -363,13 +373,14 @@ async function camInit(i) {
 	camDomElems[i].width = getTypeFromLabel(cams[i].label).width / (getTypeFromLabel(cams[i].label).height / HEIGHT);
 }
 
-//indexing based on 1: swap(1,2) swaps the first 2 feeds
+//Swap the order of the selected 2 camera feeds (indexing based on 1: swap(1,2) swaps the first 2 feeds)
 function swap(s1, s2) {
 	let streamA = camDomElems[s1 - 1].srcObject;
 	camDomElems[s1 - 1].srcObject = camDomElems[s2 - 1].srcObject;
 	camDomElems[s2 - 1].srcObject = streamA;
 }
 
+//time how long any function takes (used for testing and efficiency optimization)
 async function time(f, a, b) {
 	let captureStartTime = performance.now();
 
@@ -384,6 +395,7 @@ function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+//returns a string that displays the scanned data in an easy to visualize manner
 //parameter should be the result of scanCube(colors)
 function scanToImg(scan){
 	let str = "";
@@ -418,19 +430,21 @@ function scanToImg(scan){
 
 var port, reader, writer;
 
+//Begin listening for serial data from the microcontroller
 async function beginListen() {
 	let s = "";
 
 	while (true) {
 		if (reader != null) s += (await reader.read()).value;
 
-		if (s[s.length - 1] == '\n' && s[s.length - 2] == '\r') {
+		if (s[s.length - 1] == '\n' && s[s.length - 2] == '\r') { //only process the recieved message if it is a complete message and if the terminus bytes are recieved
 			handleMessage(s.substring(0, s.length - 2));
 			s = "";
 		}
 	}
 }
 
+//establish communication link between PC and microcontroller
 async function connect() {
 	port = await navigator.serial.requestPort();
 
@@ -447,16 +461,19 @@ async function connect() {
 		flowControl: 'none'
 	});
 
+	//create piped text decoder for reading serial data
 	const textDecoder = new TextDecoderStream();
 	const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
 	reader = textDecoder.readable.getReader();
 
+	//create piped text encoder for writing serial data
 	const textEncoder = new TextEncoderStream();
 	const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
 	writer = textEncoder.writable.getWriter();
 
 	beginListen();
 
+	//allow for some time to ensure all systems are running
 	await sleep(2000);
 
 	console.log("Serial initialized");
@@ -466,7 +483,7 @@ async function connect() {
 }
 
 
-//when message received from arduino
+//when terminal message is received from arduino
 async function handleMessage(msg) {
 	let t = performance.now();
 	console.log("Capture Time: " + ((calculationStartTime-captureStartTime)/1000.0));
@@ -509,6 +526,13 @@ async function sendMessage(msg) {
 
 //######################### SOLVE #########################
 
+/*
+
+FULL CREDIT TO cs0x7f FOR THE ORIGINAL IMPLENTATION OF THE FOLLOWING SOLVE ALGORITHM, A JAVASCRIPT IMPLEMENTATION OF KOCIEMBA'S ALGORITHM, WRITTEN BY HERBERT KOCIEMBA
+
+ONLY SOME MINOR CHANGES HAVE BEEN MADE TO THE FOLLOWING ALGORITHM TO OPTIMIZE THE RESULTS IT PRODUCES FOR THE PURPOSES OF ARCS 2.0
+
+*/
 
 var min2phase = (
 	function () {
@@ -523,7 +547,7 @@ var min2phase = (
 		var USE_COMBP_PRUN = true; //USE_TWIST_FLIP_PRUN;
 		var USE_CONJ_PRUN = USE_TWIST_FLIP_PRUN;
 		var MIN_P1LENGTH_PRE = 7;
-		var MAX_DEPTH2 = 11;//changed from 13 by sid to 11
+		var MAX_DEPTH2 = 11;//changed from 13 to 11
 
 		var INVERSE_SOLUTION = 0x2;
 
@@ -1942,9 +1966,10 @@ var min2phase = (
 		}
 	})();
 
-const INIT_EPOCHS = 10000;
+const INIT_EPOCHS = 10000; //3000 is reasonable, 10,000 is overkill but ensures a highly optimized result
 const INIT_PARTITIONS = 100;
 
+//initialize min2phase tables
 async function initSolve() {
 	if(SystemStatus.min2Phase != Min2PhaseStatus.IDLE){
 		return;
@@ -1975,6 +2000,8 @@ function initSolveCallback(i, total){
 		updateStatusIndicator();
 	}
 }
+
+//progress bar increment implementation: allows html webpage to be accurately updated with initialization data while init procedures are taking place
 function incrementProgressBar(i, time, quantity){
 	setTimeout(() => {
 		let w = document.getElementById('initProgressBar').style.width;
@@ -1985,6 +2012,7 @@ function incrementProgressBar(i, time, quantity){
 	}, 1);
 }
 
+//a simplification algorithm which efficiently compresses a solve algorithm of Single moves into an algorithm which includes dual moves
 function simplifyAlg(alg) {
 	let simplifiedAlg = '';
 
@@ -2153,6 +2181,7 @@ function algToString(alg) {
 	return translation;
 }
 
+//Used for testing purposes to report details about the results of a solve algorithm
 //returns: [# of total quarter turns (q + 2h), # of just quarter turns, # of half turns]
 function countQuarters(alg) {
 	let halfTurnC = 0;
@@ -2170,7 +2199,26 @@ function countQuarters(alg) {
 	return [quarterTurnC + 2 * halfTurnC, quarterTurnC, halfTurnC];
 }
 
-function kaboom(){
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function execute(){
 	if(SystemStatus.min2Phase != Min2PhaseStatus.INITIALIZED || SystemStatus.serial != SerialStatus.PORT_OPEN){
 		return;
 	}
